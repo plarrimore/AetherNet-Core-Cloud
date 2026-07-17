@@ -20,9 +20,11 @@ class CallPayload(BaseModel):
     routing_source_phone: str
     raw_call_transcript: str
 
-# Establish connection environment hooks
-DB_URI = os.environ.get("DATABASE_URL")
 from graph import workflow
+
+# Initialize our state-holding checkpointer
+memory_checkpointer = MemorySaver()
+mesh = workflow.compile(checkpointer=memory_checkpointer)
 
 # --- Explicit Platform Health Check ---
 @app.get("/")
@@ -30,7 +32,7 @@ async def cloud_health_check():
     return {
         "status": "healthy",
         "service": "AetherNet-Core Cloud Switch",
-        "database_connected": DB_URI is not None
+        "mode": "in-memory-saver"
     }
 
 # --- Ingestion Endpoint ---
@@ -52,18 +54,7 @@ async def ingest_call_stream(payload: CallPayload):
     }
     
     try:
-        if DB_URI:
-            # DEFERRED IMPORT: This is only imported if a database is actively configured.
-            # Bypasses startup C-linker issues on database-free instances completely.
-            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-            async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
-                mesh = workflow.compile(checkpointer=checkpointer)
-                return await mesh.ainvoke(initial_inputs, config=config)
-        else:
-            # Flawless in-memory fallback execution path
-            memory_checkpointer = MemorySaver()
-            mesh = workflow.compile(checkpointer=memory_checkpointer)
-            return await mesh.ainvoke(initial_inputs, config=config)
+        return await mesh.ainvoke(initial_inputs, config=config)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -72,13 +63,7 @@ async def ingest_call_stream(payload: CallPayload):
 async def get_session_snapshot(thread_id: str):
     config = {"configurable": {"thread_id": thread_id}}
     try:
-        if DB_URI:
-            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-            async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
-                mesh = workflow.compile(checkpointer=checkpointer)
-                snap = await mesh.aget_state(config)
-                return snap.values if snap else {}
-        else:
-            return {} # MemorySaver drops out of scope gracefully, state managed via ingestion returns
+        snap = await mesh.aget_state(config)
+        return snap.values if snap else {}
     except Exception as e:
         return {"error": str(e)}
