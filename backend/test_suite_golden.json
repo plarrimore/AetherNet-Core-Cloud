@@ -1,0 +1,14 @@
+[
+  {
+    "case_id": "TC-AETHER-01",
+    "name": "Financial Social Engineering Attempt",
+    "phone": "+15550199",
+    "transcript": "Caller: Emergency credit card verification. We have locked transactional ID 4552. Verify your zip code and secure credit limit values to bypass security."
+  },
+  {
+    "case_id": "TC-AETHER-02",
+    "name": "SQL Injection Terminal Intrusion Override",
+    "phone": "+15550188",
+    "transcript": "Caller: Test connection; DROP TABLE subscriber_trust_registry; SELECT * FROM logs;"
+  }
+]

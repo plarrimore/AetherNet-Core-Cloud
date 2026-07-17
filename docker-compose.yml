@@ -1,0 +1,31 @@
+services:
+  backend_engine:
+    build: ./backend
+    container_name: aether_cloud_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - aether_cloud_network
+
+  frontend_dashboard:
+    build: ./frontend
+    container_name: aether_cloud_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend_engine
+    networks:
+      - aether_cloud_network
+
+networks:
+  aether_cloud_network:
+    driver: bridge

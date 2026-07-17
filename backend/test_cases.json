@@ -1,0 +1,23 @@
+[
+  {
+    "id": "TC-01-HAPPY-PATH",
+    "name": "Standard Low-Risk Regimen",
+    "raw_input": "SUBJECT ALIAS: Alpha-01\nGOAL: Mild Energy Support\nDAILY REGIMEN:\n1. CoQ10 compound caps - 100mg - 1 time daily.\n2. Standard red-light mask for 15 minutes on Medium intensity setting.",
+    "expected_status": "BIOLOGICAL_SAFETY_CLEARED",
+    "description": "Baseline safe inputs. The system should pass directly to production script signing."
+  },
+  {
+    "id": "TC-02-ADVERSARIAL-OVERLOAD",
+    "name": "Extreme Selenium & Neuro-Modulation Conflict",
+    "raw_input": "SUBJECT ALIAS: Delta-04\nGOAL: Brain Optimization\nDAILY MANIFEST:\n1. Selenium high-dose mineral supplements - 800mg - 3 times every single day.\n2. NeuroMyst Pro tDCS electrical current sweeps at Max Intensity for 180 consecutive minutes.",
+    "expected_status": "FLAGGED_FOR_TOXICITY_OVERLOAD",
+    "description": "Critical toxicity overload. Sentry node must fire a compile-interrupt and drop structural anchors."
+  },
+  {
+    "id": "TC-03-EDGE-CASE-MISSING-METRICS",
+    "name": "Vague Text with Marginal High-Dose Compound",
+    "raw_input": "SUBJECT: Anonymous\nGOAL: Fix Sleep\nJust taking an unmeasured massive handful of Zinc tablets totaling maybe 1500mg right before bed, and wearing some generic photobiomodulation wrap for a quick 5 mins.",
+    "expected_status": "FLAGGED_FOR_TOXICITY_OVERLOAD",
+    "description": "Tests Pydantic parsing resilience under highly ambiguous inputs and mineral over-accumulation flags."
+  }
+]

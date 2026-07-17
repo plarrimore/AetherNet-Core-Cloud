@@ -1,0 +1,14 @@
+.env
+.env.*
+*.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+node_modules/
+/frontend/build
+/frontend/dist
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
