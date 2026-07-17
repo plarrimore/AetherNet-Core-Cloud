@@ -1,4 +1,5 @@
 import os
+import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -67,3 +68,18 @@ async def get_session_snapshot(thread_id: str):
         return snap.values if snap else {}
     except Exception as e:
         return {"error": str(e)}
+
+# --- Foolproof Native Runtime Entrypoint ---
+if __name__ == "__main__":
+    import uvicorn
+    # Dynamically extract Render's designated port, or default to 10000
+    render_assigned_port = int(os.environ.get("PORT", 10000))
+    
+    print(f"Launching AetherNet-Core Engine on port: {render_assigned_port}", flush=True)
+    
+    uvicorn.run(
+        "main:app", 
+        host="0.0.0.0", 
+        port=render_assigned_port, 
+        workers=1
+    )
