@@ -3,17 +3,15 @@ import re
 class TelecomAirlockGuard:
     """
     Pillar 2: Programmatic telecom airlock guard.
-    Catches malicious inputs or telephonic injections before invoking LLMs.
+    Stops immediate spoof attacks or high-risk telephonic injections before invoking LLMs.
     """
     def __init__(self):
-        # Broadened regex patterns to catch variations like "DROP ALL TABLES" or "system override"
         self.malicious_patterns = [
             re.compile(r"(override|prior\s+instruction|admin\s+access)", re.IGNORECASE),
             re.compile(r"(drop\s+.*table|select\s+.*from|delete\s+from)", re.IGNORECASE)
         ]
 
     def verify_transaction(self, transcript_text: str, routing_source: str) -> dict:
-        # Check both input strings against our defensive safety filters
         for pattern in self.malicious_patterns:
             if pattern.search(transcript_text) or pattern.search(routing_source):
                 return {

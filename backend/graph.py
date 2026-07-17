@@ -82,7 +82,6 @@ def cloud_metadata_extraction_node(state: AetherNetState) -> AetherNetState:
 
 def subscriber_history_node(state: AetherNetState) -> AetherNetState:
     state["execution_node_trace"] = state["execution_node_trace"] + ["SUBSCRIBER_REGISTRY_LOOKUP"]
-    # Simulated database payload to eliminate managed DB dependency requirements
     if state["routing_source_phone"] == "+15550199":
         state["subscriber_profile"] = {"phone_number": "+15550199", "subscriber_tier": "VIP_ENTERPRISE", "is_trusted": True}
     else:
@@ -98,7 +97,7 @@ def cloud_telecom_orchestrator_node(state: AetherNetState) -> AetherNetState:
         "Select the safest telecom route path. "
         "SPOOFING RULE: If metrics indicate 'is_fraudulent' is True or 'fraud_risk_index' > 0.7, "
         "assume the caller ID is spoofed. You are STRICTLY FORBIDDEN from choosing 'PERMIT_CONNECT'. "
-        "Enforce 'HARD_TERMINATE' or 'ENFORCE_VOICEMAIL_TRAP' to protect the network network infrastructure."
+        "Enforce 'HARD_TERMINATE' or 'ENFORCE_VOICEMAIL_TRAP' to protect the network infrastructure."
     )
     eval_context = f"Profile: {state['subscriber_profile']}\nMetrics: {state['extracted_telecom_metrics']}\nTranscript: {state['raw_call_transcript']}"
     

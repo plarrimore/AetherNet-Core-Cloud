@@ -6,46 +6,60 @@ export default function App() {
   const [transcriptText, setTranscriptText] = useState("Caller: Urgent customer validation loop. Please input your secure security zip code coordinates immediately.");
   const [loading, setLoading] = useState(false);
   const [stateSnapshot, setStateSnapshot] = useState(null);
+  
+  // High-Utility: Dynamic connection string with a persistent local storage override
+  const [apiBaseUrl, setApiBaseUrl] = useState(() => {
+    const saved = localStorage.getItem('AETHER_BACKEND_URL');
+    if (saved) return saved;
+    return window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+  });
 
-  const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+  useEffect(() => {
+    localStorage.setItem('AETHER_BACKEND_URL', apiBaseUrl);
+  }, [apiBaseUrl]);
 
   const syncStateFromDatabase = async (targetThread) => {
-    if (!targetThread.trim() || API_BASE === '') return;
+    if (!targetThread.trim() || !apiBaseUrl) return;
     try {
-      const res = await fetch(`${API_BASE}/api/v1/aether/snapshot/${targetThread}`);
+      const res = await fetch(`${apiBaseUrl}/api/v1/aether/snapshot/${targetThread}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.routing_status) setStateSnapshot(data);
       }
-    } catch (err) { console.warn("Syncing standing by..."); }
+    } catch (err) { console.warn("Polling standby."); }
   };
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => { syncStateFromDatabase(threadId); }, 300);
     return () => clearTimeout(delayDebounce);
-  }, [threadId]);
+  }, [threadId, apiBaseUrl]);
 
   const fireIngestion = async () => {
+    if (!apiBaseUrl) {
+      alert("Please designate your active backend target URL in the header connection panel.");
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/aether/ingest`, {
+      const res = await fetch(`${apiBaseUrl}/api/v1/aether/ingest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_thread_id: threadId, routing_source_phone: phone, raw_call_transcript: transcriptText })
       });
       const data = await res.json();
       setStateSnapshot(data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+    } catch (err) { 
+      console.error(err);
+      alert(`API Endpoint Connection Failed. Ensure your backend is running and listening at: ${apiBaseUrl}`);
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  // Helper utility to determine node visualization styles dynamically
   const getNodeClass = (nodeName) => {
     const trace = stateSnapshot?.execution_node_trace || [];
     const isActive = trace.includes(nodeName);
-    
     if (!isActive) return "bg-slate-950/40 border border-slate-900 text-slate-600 opacity-40";
-    
     if (nodeName.includes('SHIELD') || nodeName.includes('BLOCKED')) {
       return "bg-purple-950 border-2 border-purple-500 text-purple-400 font-bold shadow-lg shadow-purple-950/50 animate-pulse";
     }
@@ -54,14 +68,34 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans selection:bg-cyan-500/30">
-      <header className="border-b border-cyan-900/60 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <header className="border-b border-cyan-900/60 pb-4 mb-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
           <h1 className="text-xl font-bold font-mono text-cyan-400">🌐 AetherNet-Core: Live Cloud Telecom Switch</h1>
           <p className="text-xs text-slate-400">Pillar 3: Real-Time Fraud Intercept Tracking & Route Topography Maps</p>
         </div>
-        <div className="bg-slate-900 border border-cyan-900/40 px-4 py-2 rounded-xl flex items-center gap-3 font-mono text-xs">
-          <span className="text-cyan-300 font-bold tracking-wider text-[10px]">Active Switch Thread:</span>
-          <input type="text" value={threadId} onChange={(e) => setThreadId(e.target.value.toUpperCase())} className="bg-slate-950 border border-slate-800 text-cyan-400 px-3 py-1 rounded font-bold text-center w-48 focus:outline-none focus:ring-1 focus:ring-cyan-500" />
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto font-mono text-xs">
+          {/* Live API Route Swapper */}
+          <div className="bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl flex items-center gap-2 flex-grow sm:flex-grow-0">
+            <span className="text-emerald-400 font-bold text-[10px] tracking-wider">GATEWAY_API:</span>
+            <input 
+              type="text" 
+              value={apiBaseUrl} 
+              onChange={(e) => setApiBaseUrl(e.target.value)} 
+              placeholder="e.g. https://your-backend.up.railway.app" 
+              className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-1 rounded w-64 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div className="bg-slate-900 border border-cyan-900/40 px-3 py-2 rounded-xl flex items-center gap-2">
+            <span className="text-cyan-300 font-bold tracking-wider text-[10px]">THREAD_ID:</span>
+            <input 
+              type="text" 
+              value={threadId} 
+              onChange={(e) => setThreadId(e.target.value.toUpperCase())} 
+              className="bg-slate-950 border border-slate-800 text-cyan-400 px-3 py-1 rounded font-bold text-center w-36 focus:outline-none focus:ring-1 focus:ring-cyan-500" 
+            />
+          </div>
         </div>
       </header>
 

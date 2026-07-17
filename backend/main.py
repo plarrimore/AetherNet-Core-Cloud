@@ -7,7 +7,6 @@ from langgraph.checkpoint.memory import MemorySaver
 
 app = FastAPI(title="AetherNet-Core Cloud Gateway")
 
-# Enable standard CORS permissions for our frontend dashboard
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,20 +22,17 @@ class CallPayload(BaseModel):
 
 from graph import workflow
 
-# Initialize our state-holding checkpointer
 memory_checkpointer = MemorySaver()
 mesh = workflow.compile(checkpointer=memory_checkpointer)
 
-# --- Explicit Platform Health Check ---
 @app.get("/")
 async def cloud_health_check():
     return {
         "status": "healthy",
-        "service": "AetherNet-Core Cloud Switch",
-        "mode": "in-memory-saver"
+        "service": "AetherNet-Core Engine Live",
+        "mode": "stateless-in-memory-saver"
     }
 
-# --- Ingestion Endpoint ---
 @app.post("/api/v1/aether/ingest")
 async def ingest_call_stream(payload: CallPayload):
     config = {"configurable": {"thread_id": payload.session_thread_id}}
@@ -53,13 +49,11 @@ async def ingest_call_stream(payload: CallPayload):
         "total_token_cost_usd": 0.0, 
         "token_usage_breakdown": {}
     }
-    
     try:
         return await mesh.ainvoke(initial_inputs, config=config)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- Session Query Endpoint ---
 @app.get("/api/v1/aether/snapshot/{thread_id}")
 async def get_session_snapshot(thread_id: str):
     config = {"configurable": {"thread_id": thread_id}}
@@ -69,17 +63,8 @@ async def get_session_snapshot(thread_id: str):
     except Exception as e:
         return {"error": str(e)}
 
-# --- Foolproof Native Runtime Entrypoint ---
 if __name__ == "__main__":
     import uvicorn
-    # Dynamically extract Render's designated port, or default to 10000
-    render_assigned_port = int(os.environ.get("PORT", 10000))
-    
-    print(f"Launching AetherNet-Core Engine on port: {render_assigned_port}", flush=True)
-    
-    uvicorn.run(
-        "main:app", 
-        host="0.0.0.0", 
-        port=render_assigned_port, 
-        workers=1
-    )
+    # Clean programmatic port binding: Looks up Railway/Docker dynamic assignments, falls back to 8000 locally
+    assigned_port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=assigned_port, reload=True)
